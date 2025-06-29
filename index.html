@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Space Invaders by Douglas</title>
+    <title>Space Invaders</title>
     <style>
         body {
             margin: 0;
@@ -23,12 +23,22 @@
             color: white;
         }
         
+        #gameContainer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
         canvas {
             display: block;
-            margin: 0 auto;
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
+            transform-origin: center center;
         }
         
         #gameUI {
@@ -123,39 +133,82 @@
                 width: 15vw;
                 height: 10vw;
             }
+            
+            #gameUI {
+                top: 5px;
+                left: 5px;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
 <body>
-    <div id="gameUI">
-        <div>Score: <span id="score">0</span></div>
-        <div>Level: <span id="level">1</span></div>
-        <div>Lives: <span id="lives">3</span></div>
-    </div>
-
-    <canvas id="gameCanvas"></canvas>
-
-    <div id="mobile-controls">
-        <div class="controls-row">
-            <button id="left-btn" class="control-btn">←</button>
-            <button id="shoot-btn" class="control-btn">FIRE</button>
-            <button id="right-btn" class="control-btn">→</button>
+    <div id="gameContainer">
+        <div id="gameUI">
+            <div>Score: <span id="score">0</span></div>
+            <div>Level: <span id="level">1</span></div>
+            <div>Lives: <span id="lives">3</span></div>
         </div>
-    </div>
 
-    <div id="startScreen">
-        <h1>SPACE INVADERS</h1>
-        <button id="startButton">START GAME</button>
-    </div>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
 
-    <div id="gameOverScreen" style="display: none;">
-        <h1>GAME OVER</h1>
-        <p>Final Score: <span id="finalScore">0</span></p>
-        <button id="restartButton">PLAY AGAIN</button>
+        <div id="mobile-controls">
+            <div class="controls-row">
+                <button id="left-btn" class="control-btn">←</button>
+                <button id="shoot-btn" class="control-btn">FIRE</button>
+                <button id="right-btn" class="control-btn">→</button>
+            </div>
+        </div>
+
+        <div id="startScreen">
+            <h1>SPACE INVADERS</h1>
+            <button id="startButton">START GAME</button>
+        </div>
+
+        <div id="gameOverScreen" style="display: none;">
+            <h1>GAME OVER</h1>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <button id="restartButton">PLAY AGAIN</button>
+        </div>
     </div>
 
     <script src="game.js"></script>
     <script>
+        // Dynamic scaling for mobile devices
+        function setupMobileScaling() {
+            const canvas = document.getElementById('gameCanvas');
+            const gameContainer = document.getElementById('gameContainer');
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                // Calculate scale factor based on screen width
+                const screenWidth = window.innerWidth;
+                let scaleFactor = 0.6; // Default scale for mobile
+                
+                // Adjust scale for different screen sizes
+                if (screenWidth <= 320) { // Very small phones
+                    scaleFactor = 0.5;
+                } else if (screenWidth <= 414) { // Most phones in portrait
+                    scaleFactor = 0.55;
+                } else if (screenWidth <= 768) { // Small tablets
+                    scaleFactor = 0.65;
+                }
+                
+                // Apply scaling
+                canvas.style.transform = `scale(${scaleFactor})`;
+                
+                // Adjust control button sizes for very small screens
+                if (screenWidth <= 375) {
+                    const buttons = document.querySelectorAll('.control-btn');
+                    buttons.forEach(btn => {
+                        btn.style.width = '22vw';
+                        btn.style.height = '12vw';
+                        btn.style.fontSize = '14px';
+                    });
+                }
+            }
+        }
+
         // Prevent touch events from scrolling the page
         document.addEventListener('touchmove', function(e) {
             if (e.target.classList.contains('control-btn')) {
@@ -167,6 +220,10 @@
         document.addEventListener('contextmenu', function(e) {
             e.preventDefault();
         });
+
+        // Initialize scaling when page loads
+        window.addEventListener('load', setupMobileScaling);
+        window.addEventListener('resize', setupMobileScaling);
     </script>
 </body>
 </html>
