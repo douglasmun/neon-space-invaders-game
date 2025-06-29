@@ -1,9 +1,9 @@
 # space-invaders-game
 space invaders game in pure cilent-side-only javascript
 
-# **Space Invaders - Executive Summary**  
+# **Executive Summary**  
 
-**Game Title:** Space Invaders  
+**Game Title:** Space Invaders Game
 **Developer:** Douglas Mun  
 **Technology:** JavaScript (Canvas API), HTML5, CSS3  
 
@@ -30,7 +30,7 @@ Space Invaders is a modern, browser-based rendition of the classic arcade shoote
 
 ---
 
-# **Space Invaders - Technical Summary**  
+# **Technical Summary**  
 
 ### **Architecture & Design**  
 The game follows a **monolithic but modular** structure, with all logic and rendering handled client-side via:  
@@ -82,10 +82,5 @@ The game follows a **monolithic but modular** structure, with all logic and rend
 ---
 
 ### **Conclusion**  
-Douglas Mun’s Space Invaders demonstrates a robust, client-side implementation of arcade-style gameplay with clean code structure and attention to performance. Its modular design allows for easy expansion, while the absence of server dependencies ensures instant accessibility—a testament to efficient JavaScript game development.  
+The Space Invaders game demonstrates a robust, client-side implementation of arcade-style gameplay with clean code structure and attention to performance. Its modular design allows for easy expansion, while the absence of server dependencies ensures instant accessibility—a testament to efficient JavaScript game development.  
 
-**Playable Demo:** [Link to GitHub Pages or local file path]  
-**Code Repository:** [Optional link]  
-
---- 
-This summary balances technical depth with readability, suitable for portfolios, documentation, or developer discussions. Let me know if you'd like to emphasize any specific aspects!
