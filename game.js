@@ -9,6 +9,11 @@ const gameOverScreen = document.getElementById('gameOverScreen');
 const finalScoreElement = document.getElementById('finalScore');
 const restartButton = document.getElementById('restartButton');
 
+// Mobile control variables
+let mobileLeftPressed = false;
+let mobileRightPressed = false;
+let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
 // Game state
 const gameState = {
     player: {
@@ -34,6 +39,107 @@ const keys = {
     ' ': false
 };
 
+// Setup mobile controls if needed
+function setupMobileControls() {
+    if (isMobile) {
+        const mobileControls = document.getElementById('mobile-controls');
+        mobileControls.style.display = 'block';
+        
+        document.getElementById('left-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            mobileLeftPressed = true;
+        }, { passive: false });
+        
+        document.getElementById('left-btn').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            mobileLeftPressed = false;
+        }, { passive: false });
+        
+        document.getElementById('right-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            mobileRightPressed = true;
+        }, { passive: false });
+        
+        document.getElementById('right-btn').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            mobileRightPressed = false;
+        }, { passive: false });
+        
+        document.getElementById('shoot-btn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            keys[' '] = true;
+        }, { passive: false });
+        
+        document.getElementById('shoot-btn').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            keys[' '] = false;
+        }, { passive: false });
+    }
+}
+
+// Handle window resize
+function resizeCanvas() {
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const targetRatio = 800 / 600; // Original game aspect ratio
+    
+    let canvasWidth = windowWidth;
+    let canvasHeight = windowWidth / targetRatio;
+    
+    if (canvasHeight > windowHeight) {
+        canvasHeight = windowHeight;
+        canvasWidth = windowHeight * targetRatio;
+    }
+    
+    canvas.style.width = `${canvasWidth}px`;
+    canvas.style.height = `${canvasHeight}px`;
+    
+    // Set the actual canvas buffer size
+    const scale = window.devicePixelRatio || 1;
+    canvas.width = canvasWidth * scale;
+    canvas.height = canvasHeight * scale;
+    ctx.scale(scale, scale);
+    
+    // Adjust game elements for new size
+    if (gameState.gameStarted) {
+        const scaleX = canvas.width / 800;
+        const scaleY = canvas.height / 600;
+        
+        // Scale player position
+        gameState.player.x *= scaleX;
+        gameState.player.y *= scaleY;
+        gameState.player.width *= scaleX;
+        gameState.player.height *= scaleY;
+        gameState.player.speed *= scaleX;
+        
+        // Scale enemies
+        gameState.enemies.forEach(enemy => {
+            enemy.x *= scaleX;
+            enemy.y *= scaleY;
+            enemy.width *= scaleX;
+            enemy.height *= scaleY;
+        });
+        
+        // Scale projectiles
+        gameState.projectiles.forEach(proj => {
+            proj.x *= scaleX;
+            proj.y *= scaleY;
+            proj.width *= scaleX;
+            proj.height *= scaleY;
+            proj.speed *= scaleY;
+        });
+        
+        gameState.enemyProjectiles.forEach(proj => {
+            proj.x *= scaleX;
+            proj.y *= scaleY;
+            proj.width *= scaleX;
+            proj.height *= scaleY;
+            proj.speed *= scaleY;
+        });
+    }
+}
+
+// Input handling
 window.addEventListener('keydown', (e) => {
     if (e.key in keys) {
         keys[e.key] = true;
@@ -48,6 +154,7 @@ window.addEventListener('keyup', (e) => {
     }
 });
 
+// Game controls
 startButton.addEventListener('click', () => {
     startScreen.style.display = 'none';
     resetGame(true);
@@ -58,6 +165,13 @@ restartButton.addEventListener('click', () => {
     resetGame(true);
 });
 
+// Initialize game
+function initGame() {
+    resizeCanvas();
+    setupMobileControls();
+    resetGame(false);
+}
+
 // Game loop
 function gameLoop() {
     updateGameState();
@@ -67,7 +181,6 @@ function gameLoop() {
     levelElement.textContent = gameState.level;
     livesElement.textContent = gameState.player.lives;
 
-    // Handle screen visibility
     if (gameState.gameOver) {
         gameOverScreen.style.display = 'flex';
         finalScoreElement.textContent = gameState.score;
@@ -89,15 +202,15 @@ function updateGameState() {
     gameState.frameCount++;
     const currentTime = Date.now();
 
-    // Update player position based on keys
-    if (keys.ArrowLeft && gameState.player.x > 0) {
+    // Player movement
+    if ((keys.ArrowLeft || mobileLeftPressed) && gameState.player.x > 0) {
         gameState.player.x -= gameState.player.speed;
     }
-    if (keys.ArrowRight && gameState.player.x < 800 - gameState.player.width) {
+    if ((keys.ArrowRight || mobileRightPressed) && gameState.player.x < canvas.width - gameState.player.width) {
         gameState.player.x += gameState.player.speed;
     }
     if (keys[' '] && gameState.player.isAlive) {
-        keys[' '] = false; // Prevent auto-fire
+        keys[' '] = false;
         gameState.projectiles.push({
             x: gameState.player.x + gameState.player.width / 2 - 2.5, 
             y: gameState.player.y, 
@@ -129,7 +242,7 @@ function updateGameState() {
             if (enemy.x + enemy.width > maxX) maxX = enemy.x + enemy.width;
         });
 
-        if (gameState.enemyHorizontalDirection === 1 && maxX >= 800) {
+        if (gameState.enemyHorizontalDirection === 1 && maxX >= canvas.width) {
             shouldMoveDown = true;
         } else if (gameState.enemyHorizontalDirection === -1 && minX <= 0) {
             shouldMoveDown = true;
@@ -139,7 +252,7 @@ function updateGameState() {
     if (shouldMoveDown) {
         gameState.enemies.forEach(enemy => {
             enemy.y += 20;
-            if (enemy.y + enemy.height >= 550) {
+            if (enemy.y + enemy.height >= canvas.height * 0.9) {
                 if (!gameState.gameOver) {
                     triggerGameOver('enemies_landed');
                 }
@@ -154,7 +267,7 @@ function updateGameState() {
 
     // Enemy shooting
     if (gameState.frameCount % 60 === 0 && gameState.enemies.length > 0 && !gameState.gameOver) {
-        const activeEnemies = gameState.enemies.filter(enemy => enemy.y < 500);
+        const activeEnemies = gameState.enemies.filter(enemy => enemy.y < canvas.height * 0.8);
         if (activeEnemies.length > 0) {
             const shootingEnemy = activeEnemies[Math.floor(Math.random() * activeEnemies.length)];
             gameState.enemyProjectiles.push({
@@ -172,7 +285,7 @@ function updateGameState() {
     for (let i = gameState.enemyProjectiles.length - 1; i >= 0; i--) {
         const proj = gameState.enemyProjectiles[i];
         proj.y += proj.speed;
-        if (proj.y > 600) {
+        if (proj.y > canvas.height) {
             gameState.enemyProjectiles.splice(i, 1);
         }
     }
@@ -242,8 +355,8 @@ function checkCollisions() {
                     gameState.player.isAlive = false;
                     triggerGameOver('player_died');
                 } else {
-                    gameState.player.x = 400;
-                    gameState.player.y = 550;
+                    gameState.player.x = canvas.width / 2 - gameState.player.width / 2;
+                    gameState.player.y = canvas.height - gameState.player.height - 20;
                 }
             }
         }
@@ -287,11 +400,21 @@ function triggerGameOver(reason) {
 }
 
 function resetGame(shouldStart = true) {
+    // Reset player
     gameState.player = {
-        x: 400, y: 550, width: 50, height: 30, color: '#00FF00', speed: 5,
-        lives: 3, score: 0, isAlive: true, invulnerableUntil: 0
+        x: canvas.width / 2 - 25,
+        y: canvas.height - 80,
+        width: 50,
+        height: 30,
+        color: '#00FF00',
+        speed: 5,
+        lives: 3,
+        score: 0,
+        isAlive: true,
+        invulnerableUntil: 0
     };
 
+    // Reset game state
     gameState.enemies = [];
     gameState.projectiles = [];
     gameState.enemyProjectiles = [];
@@ -312,15 +435,15 @@ function spawnEnemies() {
     gameState.enemies = [];
     const rows = 5;
     const cols = 11;
-    const enemyWidth = 50;
-    const enemyHeight = 40;
-    const padding = 15;
+    const enemyWidth = 50 * (canvas.width / 800);
+    const enemyHeight = 40 * (canvas.height / 600);
+    const padding = 15 * (canvas.width / 800);
 
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
             gameState.enemies.push({
-                x: 100 + c * (enemyWidth + padding),
-                y: 50 + r * (enemyHeight + padding),
+                x: 100 * (canvas.width / 800) + c * (enemyWidth + padding),
+                y: 50 * (canvas.height / 600) + r * (enemyHeight + padding),
                 width: enemyWidth,
                 height: enemyHeight,
                 color: r === 0 ? '#FF5555' : r < 3 ? '#55FF55' : '#5555FF'
@@ -365,7 +488,6 @@ function renderGame() {
     });
 }
 
-// Drawing functions (same as before)
 function drawShip(ship) {
     ctx.save();
     ctx.fillStyle = ship.color;
@@ -406,23 +528,23 @@ function drawEnemy(enemy) {
     if (enemy.color === '#FF5555') {
         ctx.fillStyle = enemy.color;
         ctx.beginPath();
-        ctx.arc(x + width/2, y + 15, 15, 0, Math.PI * 2);
+        ctx.arc(x + width/2, y + height/3, width/3, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillRect(x + 10, y + 25, width - 20, 10);
+        ctx.fillRect(x + width/4, y + height/2, width/2, height/4);
     }
     else if (enemy.color === '#55FF55') {
         ctx.fillStyle = enemy.color;
-        ctx.fillRect(x + 15, y + 5, width - 30, height - 10);
-        ctx.fillRect(x + 5, y + 15, 10, 10);
-        ctx.fillRect(x + width - 15, y + 15, 10, 10);
+        ctx.fillRect(x + width/4, y + height/6, width/2, height*2/3);
+        ctx.fillRect(x + width/6, y + height/3, width/6, height/3);
+        ctx.fillRect(x + width*2/3, y + height/3, width/6, height/3);
     }
     else {
         ctx.fillStyle = enemy.color;
         ctx.beginPath();
-        ctx.arc(x + 20, y + 15, 10, 0, Math.PI * 2);
-        ctx.arc(x + width - 20, y + 15, 10, 0, Math.PI * 2);
+        ctx.arc(x + width/3, y + height/3, width/6, 0, Math.PI * 2);
+        ctx.arc(x + width*2/3, y + height/3, width/6, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillRect(x + 15, y + 25, width - 30, 10);
+        ctx.fillRect(x + width/4, y + height/2, width/2, height/4);
     }
 
     ctx.restore();
@@ -510,6 +632,7 @@ function drawStars() {
     ctx.globalAlpha = 1.0;
 }
 
-// Start the game
-resetGame(false);
+// Initialize and start the game
+window.addEventListener('load', initGame);
+window.addEventListener('resize', resizeCanvas);
 gameLoop();
