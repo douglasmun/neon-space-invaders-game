@@ -25,8 +25,8 @@
         
         #gameContainer {
             position: relative;
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -35,10 +35,11 @@
         
         canvas {
             display: block;
-            max-width: 100%;
-            max-height: 100%;
+            width: 100%;
+            height: 100%;
             object-fit: contain;
             transform-origin: center center;
+            touch-action: none;
         }
         
         #gameUI {
@@ -174,28 +175,45 @@
 
     <script src="game.js"></script>
     <script>
-        // Dynamic scaling for mobile devices
-        function setupMobileScaling() {
+        // Dynamic scaling for all devices
+        function setupGameScaling() {
             const canvas = document.getElementById('gameCanvas');
             const gameContainer = document.getElementById('gameContainer');
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             
+            // Original game dimensions
+            const gameWidth = 800;
+            const gameHeight = 600;
+            const gameRatio = gameWidth / gameHeight;
+            
+            // Get available screen space
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            const screenRatio = screenWidth / screenHeight;
+            
+            let scale, newWidth, newHeight;
+            
+            if (screenRatio > gameRatio) {
+                // Screen is wider than game (landscape)
+                scale = screenHeight / gameHeight;
+                newHeight = screenHeight;
+                newWidth = gameWidth * scale;
+            } else {
+                // Screen is taller than game (portrait)
+                scale = screenWidth / gameWidth;
+                newWidth = screenWidth;
+                newHeight = gameHeight * scale;
+            }
+            
+            // Apply the scaling
+            canvas.style.width = `${newWidth}px`;
+            canvas.style.height = `${newHeight}px`;
+            canvas.style.transform = 'none'; // Remove previous scaling
+            
+            // For mobile, show controls
+            const mobileControls = document.getElementById('mobile-controls');
             if (isMobile) {
-                // Calculate scale factor based on screen width
-                const screenWidth = window.innerWidth;
-                let scaleFactor = 0.6; // Default scale for mobile
-                
-                // Adjust scale for different screen sizes
-                if (screenWidth <= 320) { // Very small phones
-                    scaleFactor = 0.5;
-                } else if (screenWidth <= 414) { // Most phones in portrait
-                    scaleFactor = 0.55;
-                } else if (screenWidth <= 768) { // Small tablets
-                    scaleFactor = 0.65;
-                }
-                
-                // Apply scaling
-                canvas.style.transform = `scale(${scaleFactor})`;
+                mobileControls.style.display = 'block';
                 
                 // Adjust control button sizes for very small screens
                 if (screenWidth <= 375) {
@@ -206,6 +224,8 @@
                         btn.style.fontSize = '14px';
                     });
                 }
+            } else {
+                mobileControls.style.display = 'none';
             }
         }
 
@@ -222,8 +242,8 @@
         });
 
         // Initialize scaling when page loads
-        window.addEventListener('load', setupMobileScaling);
-        window.addEventListener('resize', setupMobileScaling);
+        window.addEventListener('load', setupGameScaling);
+        window.addEventListener('resize', setupGameScaling);
     </script>
 </body>
 </html>
