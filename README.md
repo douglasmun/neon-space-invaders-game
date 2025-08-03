@@ -1,4 +1,4 @@
-# space-invaders-game
+# Neon-Space-Invaders-game
 space invaders game in pure cilent-side-only javascript
 
 # **Executive Summary**  
